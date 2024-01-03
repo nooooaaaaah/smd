@@ -1,7 +1,7 @@
 package smd
 
 import (
-	handlers "Smd/Handlers"
+	handlers "Smd/handlers"
 	"Smd/types"
 	"fmt"
 	"net/http"
