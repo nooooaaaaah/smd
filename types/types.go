@@ -20,49 +20,49 @@ type Directory struct {
 }
 
 type File struct {
+	UploadDate  time.Time
 	ID          string
 	Name        string
-	Size        int64
 	ContentType string
 	Location    string
-	UploadDate  time.Time
 	OwnerID     string
+	Size        int64
 }
 
 type User struct {
+	CreatedAt time.Time
 	ID        string
 	Username  string
 	Password  string
 	Email     string
 	Role      Role
-	CreatedAt time.Time
 }
 
 type AccessControlList []User
 
 type Session struct {
+	Token  AuthToken
 	ID     string
 	UserID string
-	Token  AuthToken
 }
 
 type ActiveSessions []Session
 
 type AuthToken struct {
-	Token     string
 	ExpiresAt time.Time
+	Token     string
 }
 
 type ApiResponse struct {
-	Success bool
-	Message string
 	Data    interface{}
+	Message string
+	Success bool
 }
 
 type ApiError struct {
-	Code    int
 	Key     string
 	Message string
+	Code    int
 }
 
 type RolePrivileges map[Role]Privileges
