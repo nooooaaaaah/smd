@@ -73,7 +73,7 @@ func (d *database) Disconnect() error {
 	return d.db.Close()
 }
 
-// DeleteDirectory implements Database.
+// DeleteDirectory in database
 func (d *database) DeleteDirectory(directoryName string) error {
 	_, err := d.db.Exec("DELETE FROM directories WHERE name = ?", directoryName)
 	if err != nil {
@@ -82,7 +82,7 @@ func (d *database) DeleteDirectory(directoryName string) error {
 	return nil
 }
 
-// DeleteFile implements Database.
+// DeleteFile in database
 func (d *database) DeleteFile(filename string) error {
 	_, err := d.db.Exec("DELETE FROM files WHERE name = ?", filename)
 	if err != nil {
@@ -91,7 +91,7 @@ func (d *database) DeleteFile(filename string) error {
 	return nil
 }
 
-// DeleteUser implements Database.
+// DeleteUser in database
 func (d *database) DeleteUser(username string) error {
 	_, err := d.db.Exec("DELETE FROM users WHERE username = ?", username)
 	if err != nil {
@@ -100,7 +100,7 @@ func (d *database) DeleteUser(username string) error {
 	return nil
 }
 
-// GetAllDirectories implements Database.
+// GetAllDirectories in database
 func (d *database) GetAllDirectories() ([]Directory, error) {
 	rows, err := d.db.Query("SELECT * FROM directories")
 	if err != nil {
@@ -120,7 +120,7 @@ func (d *database) GetAllDirectories() ([]Directory, error) {
 	return directories, nil
 }
 
-// GetAllFiles implements Database.
+// GetAllFiles in database
 func (d *database) GetAllFiles() ([]File, error) {
 	rows, err := d.db.Query("SELECT * FROM files")
 	if err != nil {
@@ -139,7 +139,7 @@ func (d *database) GetAllFiles() ([]File, error) {
 	return files, nil
 }
 
-// GetAllUsers implements Database.
+// GetAllUsers
 func (d *database) GetAllUsers() ([]User, error) {
 	rows, err := d.db.Query("SELECT * FROM users")
 	if err != nil {
@@ -158,7 +158,7 @@ func (d *database) GetAllUsers() ([]User, error) {
 	return users, nil
 }
 
-// GetDirectory implements Database.
+// GetDirectory in database
 func (d *database) GetDirectory(directoryName string) (Directory, error) {
 	row := d.db.QueryRow("SELECT * FROM directories WHERE name = ?", directoryName)
 	var directory Directory
@@ -169,7 +169,7 @@ func (d *database) GetDirectory(directoryName string) (Directory, error) {
 	return directory, nil
 }
 
-// GetFile implements Database.
+// GetFile in database
 func (d *database) GetFile(filename string) (File, error) {
 	row := d.db.QueryRow("SELECT * FROM files WHERE name = ?", filename)
 	var file File
@@ -180,7 +180,7 @@ func (d *database) GetFile(filename string) (File, error) {
 	return file, nil
 }
 
-// GetUser implements Database.
+// GetUser in database
 func (d *database) GetUser(username string) (User, error) {
 	row := d.db.QueryRow("SELECT * FROM users WHERE username = ?", username)
 	var user User
@@ -191,7 +191,7 @@ func (d *database) GetUser(username string) (User, error) {
 	return user, nil
 }
 
-// InsertDirectory implements Database.
+// InsertDirectory in database
 func (d *database) InsertDirectory(dir Directory) error {
 	_, err := d.db.Exec("INSERT INTO directories (id, name, owner_id, parent_directory_id) VALUES (?, ?, ?, ?)", dir.ID, dir.Name, dir.OwnerID, dir.ParentDirectoryID)
 	if err != nil {
@@ -200,7 +200,7 @@ func (d *database) InsertDirectory(dir Directory) error {
 	return nil
 }
 
-// InsertFile implements Database.
+// InsertFile in database
 func (d *database) InsertFile(f File) error {
 	_, err := d.db.Exec("INSERT INTO files (id, name, size, content_type, location, upload_date, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?)", f.ID, f.Name, f.Size, f.ContentType, f.Location, f.UploadDate, f.OwnerID)
 	if err != nil {
@@ -209,7 +209,7 @@ func (d *database) InsertFile(f File) error {
 	return nil
 }
 
-// InsertUser implements Database.
+// InsertUser in database
 func (d *database) InsertUser(u User) error {
 	_, err := d.db.Exec("INSERT INTO users (id, username, password, email, role, created_at) VALUES (?, ?, ?, ?, ?, ?)", u.ID, u.Username, u.Password, u.Email, u.Role, u.CreatedAt)
 	if err != nil {
@@ -218,7 +218,7 @@ func (d *database) InsertUser(u User) error {
 	return nil
 }
 
-// UpdateDirectory implements Database.
+// UpdateDirectory in database
 func (d *database) UpdateDirectory(dir Directory) error {
 	_, err := d.db.Exec("UPDATE directories SET name = ?, owner_id = ?, parent_directory_id = ? WHERE id = ?", dir.Name, dir.OwnerID, dir.ParentDirectoryID, dir.ID)
 	if err != nil {
@@ -227,7 +227,7 @@ func (d *database) UpdateDirectory(dir Directory) error {
 	return nil
 }
 
-// UpdateFile implements Database.
+// UpdateFile in database
 func (d *database) UpdateFile(f File) error {
 	_, err := d.db.Exec("UPDATE files SET name = ?, size = ?, content_type = ?, location = ?, upload_date = ?, owner_id = ? WHERE id = ?", f.Name, f.Size, f.ContentType, f.Location, f.UploadDate, f.OwnerID, f.ID)
 	if err != nil {
@@ -236,7 +236,7 @@ func (d *database) UpdateFile(f File) error {
 	return nil
 }
 
-// UpdateUser implements Database.
+// UpdateUser in database
 func (d *database) UpdateUser(u User) error {
 	_, err := d.db.Exec("UPDATE users SET username = ?, password = ?, email = ?, role = ?, created_at = ? WHERE id = ?", u.Username, u.Password, u.Email, u.Role, u.CreatedAt, u.ID)
 	if err != nil {
