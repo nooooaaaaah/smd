@@ -3,9 +3,12 @@ package handlers
 import (
 	"Smd/services"
 	"Smd/types"
+	"crypto/sha256"
+	"encoding/hex"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 type FileHandler struct {
@@ -18,9 +21,10 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := r.ParseMultipartForm(10 << 20) // Max memory 10MB
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20) // Max memory 10MB
+	err := r.ParseMultipartForm(10 << 20)           // Max memory 10MB
 	if err != nil {
-		http.Error(w, "Error parsing multipart form", http.StatusInternalServerError)
+		http.Error(w, "File to big", http.StatusInternalServerError)
 		return
 	}
 
@@ -31,17 +35,23 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		http.Error(w, "Error hashing the file", http.StatusInternalServerError)
+		return
+	}
+	hashedFilename := hex.EncodeToString(hasher.Sum(nil))
 	subdirectory := r.FormValue("subdirectory")
-
-	out, err := os.Create("/StoreMeDaddy/" + subdirectory + header.Filename)
+	flatFilename := subdirectory + "_" + hashedFilename
+	filepath := filepath.Join("/StoreMeDaddy", flatFilename)
+	out, err := os.Create(filepath)
 	if err != nil {
 		http.Error(w, "Error creating the file", http.StatusInternalServerError)
 		return
 	}
 	defer out.Close()
 
-	_, err = io.Copy(out, file)
-	if err != nil {
+	if _, err = io.Copy(out, file); err != nil {
 		http.Error(w, "Error writing the file", http.StatusInternalServerError)
 		return
 	}
@@ -49,10 +59,13 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 		Name:        header.Filename,
 		Size:        header.Size,
 		ContentType: header.Header.Get("Content-Type"),
-		Location:    "StoreMeDaddy/" + subdirectory + header.Filename,
+		Location:    filepath,
 		OwnerID:     "1",
 	}
 	fileService := services.NewFileService()
-	fileService.UploadFile(f)
+	if err := fileService.UploadFile(f); err != nil {
+		http.Error(w, "Error MetaData not saved", http.StatusInternalServerError)
+	}
+	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte("File uploaded successfully"))
 }
