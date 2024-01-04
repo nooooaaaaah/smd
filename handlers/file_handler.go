@@ -50,7 +50,11 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer out.Close()
-
+	_, err = file.Seek(0, 0) // Reset file read position
+	if err != nil {
+		http.Error(w, "Error resetting file position", http.StatusInternalServerError)
+		return
+	}
 	if _, err = io.Copy(out, file); err != nil {
 		http.Error(w, "Error writing the file", http.StatusInternalServerError)
 		return
@@ -67,5 +71,6 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error MetaData not saved", http.StatusInternalServerError)
 	}
 	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("File uploaded successfully"))
 }
