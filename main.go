@@ -1,7 +1,8 @@
-package smd
+package main
 
 import (
 	handlers "Smd/handlers"
+	"Smd/services"
 	"Smd/types"
 	"fmt"
 	"net/http"
@@ -18,13 +19,23 @@ func main() {
 		maxFileSize = "100000000"
 	}
 
-	fmt.Println("Starting server...")
+	fileService := services.NewFileService()
+	fileHandler := &handlers.FileHandler{
+		FileService: fileService,
+	}
+
+	fmt.Println("Starting server (modem noises)...")
 	fmt.Println("Registering handler for /upload")
-	http.HandleFunc("/upload", handlers.UploadFileHandler)
+	http.HandleFunc("/upload", fileHandler.UploadFileHandler)
 	fmt.Println("Handlers registered")
-	http.ListenAndServe(":8080", nil)
+	fmt.Println("Spinning up database")
 	db := types.NewDatabase()
 	types.Database.CreateDb(db)
-	fmt.Println("Server started at port 8080")
+	fmt.Println("Server started")
 	fmt.Println("Press Ctrl+C to exit")
+	fmt.Println("Listening on port " + port)
+	if err := http.ListenAndServe(":5464", nil); err != nil {
+		fmt.Printf("error starting server: %v", err)
+	}
+
 }
