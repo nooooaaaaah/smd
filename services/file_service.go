@@ -41,7 +41,7 @@ func NewFileService() FileService {
 func (fs *fileService) UploadFile(f types.File) error {
 	err := fs.db.InsertFile(f)
 	if err != nil {
-		return err
+		return fmt.Errorf("error uploading file to database: %v", err)
 	}
 	return nil
 }
@@ -66,9 +66,13 @@ func (fs *fileService) SaveFile(file multipart.File, hashedFilename, subdirector
 	if _, err = io.Copy(out, file); err != nil {
 		return "", err
 	}
+	if err := out.Close(); err != nil {
+		return "", fmt.Errorf("error closing file: %v", err)
+	}
 
 	return path, nil
 }
+
 func (fs *fileService) SaveAndUploadFile(file multipart.File, hashedFilename string, subdirectory string, f types.File) error {
 	filepath, err := fs.SaveFile(file, hashedFilename, subdirectory)
 	if err != nil {
@@ -84,16 +88,31 @@ func (fs *fileService) SaveAndUploadFile(file multipart.File, hashedFilename str
 
 func (fs *fileService) ParseAndValidateFile(r *http.Request, w http.ResponseWriter) (file multipart.File, header *multipart.FileHeader, err error) {
 	r.Body = http.MaxBytesReader(w, r.Body, 10<<20) // Max memory 10MB
-	err = r.ParseMultipartForm(10 << 20)            // Max memory 10MB
+	if r.Body == nil || r.ContentLength == 0 {
+		return nil, nil, fmt.Errorf("request body empty")
+	}
+	err = r.ParseMultipartForm(10 << 20) // Max memory 10MB
+
 	if err != nil {
-		return nil, nil, fmt.Errorf("file too big")
+		if err.Error() == "http: request body too large" {
+			return nil, nil, fmt.Errorf("file too big")
+		}
+		switch err {
+		case http.ErrNotMultipart:
+			return nil, nil, fmt.Errorf("request body empty")
+		case http.ErrMissingFile:
+			return nil, nil, fmt.Errorf("no file in request body")
+		case http.ErrHandlerTimeout:
+			return nil, nil, fmt.Errorf("request timed out, file might be too big")
+		default:
+			return nil, nil, fmt.Errorf("error parsing form: %v", err)
+		}
 	}
 
 	file, header, err = r.FormFile("uploadFile")
 	if err != nil {
 		return nil, nil, fmt.Errorf("error retrieving the file")
 	}
-
 	return file, header, nil
 }
 
