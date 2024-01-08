@@ -18,6 +18,7 @@ type Database interface {
 	GetAllDirectories() ([]Directory, error)
 	GetAllUsers() ([]User, error)
 	UpdateUser(u User) error
+	UpdateUserPassword(userID string, newPassword string) error
 	UpdateFile(f File) error
 	UpdateDirectory(d Directory) error
 	DeleteUser(username string) error
@@ -239,6 +240,14 @@ func (d *database) UpdateFile(f File) error {
 // UpdateUser in database
 func (d *database) UpdateUser(u User) error {
 	_, err := d.db.Exec("UPDATE users SET username = ?, password = ?, email = ?, role = ?, created_at = ? WHERE id = ?", u.Username, u.Password, u.Email, u.Role, u.CreatedAt, u.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *database) UpdateUserPassword(userID string, newPassword string) error {
+	_, err := d.db.Exec("UPDATE users SET password = ? WHERE id = ?", newPassword, userID)
 	if err != nil {
 		return err
 	}

@@ -47,13 +47,21 @@ func (fs *fileService) UploadFile(f types.File) error {
 	return nil
 }
 
-func (fs *fileService) SaveFile(file multipart.File, hashedFilename, subdirectory string) (path string, err error) {
+func (fs *fileService) SaveFile(file multipart.File, hashedFilename string, subdirectory string) (path string, err error) {
+	if file == nil {
+		return "", fmt.Errorf("file is nil")
+	}
 	flatFilename := hashedFilename
+	fmt.Println(subdirectory)
 	if subdirectory != "" {
 		flatFilename = subdirectory + "_" + hashedFilename
 	}
 
-	path = filepath.Join("/StoreMeDaddy", flatFilename)
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	path = filepath.Join(homeDir, "StoreMeDaddy", flatFilename)
 	out, err := os.Create(path)
 	if err != nil {
 		return "", err
@@ -70,7 +78,6 @@ func (fs *fileService) SaveFile(file multipart.File, hashedFilename, subdirector
 	if err := out.Close(); err != nil {
 		return "", fmt.Errorf("error closing file: %v", err)
 	}
-
 	return path, nil
 }
 
@@ -118,6 +125,9 @@ func (fs *fileService) ParseAndValidateFile(r *http.Request, w http.ResponseWrit
 }
 
 func (fs *fileService) HashFile(file multipart.File) (hashedFilename string, err error) {
+	if file == nil {
+		return "", fmt.Errorf("file is nil")
+	}
 	if _, err := file.Seek(0, 0); err != nil {
 		return "", err
 	}
@@ -126,4 +136,8 @@ func (fs *fileService) HashFile(file multipart.File) (hashedFilename string, err
 		return "", err
 	}
 	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
+func (fs *fileService) GetFile(fileName string) (types.File, error) {
+	return fs.db.GetFile(fileName)
 }

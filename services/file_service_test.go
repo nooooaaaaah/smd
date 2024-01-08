@@ -1,6 +1,7 @@
 package services
 
 import (
+	"Smd/types"
 	"bytes"
 	"mime/multipart"
 	"net/http"
@@ -96,17 +97,19 @@ func TestParseAndValidateFile(t *testing.T) {
 		})
 	}
 }
+
 func TestSaveFile(t *testing.T) {
 	fs := &fileService{}
 
 	tests := []struct {
-		name        string
-		file        multipart.File
-		destination string
-		wantErr     bool
+		name    string
+		file    multipart.File
+		subDir  string
+		wantErr bool
 	}{
 		{
-			name: "Success",
+			name:   "Success",
+			subDir: "",
 			file: func() multipart.File {
 				file, err := os.CreateTemp("", "test")
 				if err != nil {
@@ -116,29 +119,162 @@ func TestSaveFile(t *testing.T) {
 				file.Seek(0, 0)
 				return file
 			}(), // Simulate a file with "test data"
-			destination: func() string {
-				dir, err := os.MkdirTemp("", "destination")
-				if err != nil {
-					t.Fatal(err)
-				}
-				return dir
-			}(),
 			wantErr: false,
 		},
 		{
-			name:        "NilFile",
-			file:        nil,
-			destination: "",
-			wantErr:     true,
+			name:    "NilFile",
+			subDir:  "",
+			file:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Subdirectory",
+			subDir:  "taco",
+			file:    func() multipart.File { file, _ := os.CreateTemp("", "test"); return file }(), // Simulate an empty file
+			wantErr: false,
+			// Add more test cases here
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := fs.SaveFile(tt.file, tt.name, tt.subDir)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SaveFile() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestNewFileService(t *testing.T) {
+	fs := NewFileService()
+
+	if fs == nil {
+		t.Errorf("NewFileService() = %v, want non-nil", fs)
+	}
+}
+
+func TestUploadFile(t *testing.T) {
+	fs := NewFileService()
+
+	tests := []struct {
+		name    string
+		file    types.File
+		wantErr bool
+	}{
+		{
+			name:    "Success",
+			file:    types.File{ID: "1", Name: "testfile", Location: "/tmp/testfile"},
+			wantErr: false,
 		},
 		// Add more test cases here
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := fs.SaveFile(tt.file, tt.name, tt.destination)
+			os.Remove("smd.db")
+			types.Database.CreateDb(types.NewDatabase())
+			err := fs.UploadFile(tt.file)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("SaveFile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("UploadFile() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestSaveAndUploadFile(t *testing.T) {
+	fs := NewFileService()
+
+	tests := []struct {
+		name           string
+		file           multipart.File
+		hashedFilename string
+		subdirectory   string
+		f              types.File
+		wantErr        bool
+	}{
+		{
+			name:           "Success",
+			file:           func() multipart.File { file, _ := os.CreateTemp("", "test"); return file }(), // Simulate an empty file
+			hashedFilename: "hashedFilename",
+			subdirectory:   "",
+			f:              types.File{ID: "2", Name: "SaveAndUploadFile", Location: "/tmp/testfile"},
+			wantErr:        false,
+		},
+		// Add more test cases here
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			types.Database.CreateDb(types.NewDatabase())
+			err := fs.SaveAndUploadFile(tt.file, tt.hashedFilename, tt.subdirectory, tt.f)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SaveAndUploadFile() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestHashingFile(t *testing.T) {
+	fs := NewFileService()
+
+	tests := []struct {
+		file    multipart.File
+		name    string
+		wantErr bool
+	}{
+		{
+			name: "Success",
+			file: func() multipart.File {
+				file, _ := os.CreateTemp("", "test")
+				file.WriteString("test data")
+				file.Seek(0, 0)
+				return file
+			}(), // Simulate a file with "test data"
+			wantErr: false,
+		},
+		{
+			name:    "NilFile",
+			file:    nil,
+			wantErr: true,
+		},
+		// Add more test cases here
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := fs.HashFile(tt.file)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("HashFile() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestGetFile(t *testing.T) {
+	fs := NewFileService()
+	tests := []struct {
+		name     string
+		fileName string
+		wantErr  bool
+	}{
+		{
+			name:     "Success",
+			fileName: "1",
+			wantErr:  false,
+		},
+		{
+			name:     "NonExistentFile",
+			fileName: "2",
+			wantErr:  true,
+		},
+		// Add more test cases here
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := fs.GetFile(tt.fileName)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetFile() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
