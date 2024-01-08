@@ -52,3 +52,17 @@ func (fh *FileHandler) UploadFileHandler(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("File uploaded successfully"))
 }
+
+func (fh *FileHandler) GetFileHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+	file, err := fh.FileService.GetFile(r.FormValue("filename"))
+	if err != nil {
+		http.Error(w, "Error getting the file", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", file.ContentType)
+	http.ServeFile(w, r, file.Location)
+}

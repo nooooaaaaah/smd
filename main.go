@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 func main() {
@@ -23,7 +24,16 @@ func main() {
 	fileHandler := &handlers.FileHandler{
 		FileService: fileService,
 	}
-
+	fmt.Println("Creating ~/StoreMeDaddy directory")
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	dir := filepath.Join(homeDir, "StoreMeDaddy")
+	err = os.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
 	fmt.Println("Starting server (modem noises)...")
 	fmt.Println("Registering handler for /upload")
 	http.HandleFunc("/upload", fileHandler.UploadFileHandler)

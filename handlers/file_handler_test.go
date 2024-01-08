@@ -4,6 +4,7 @@ import (
 	"Smd/types"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -40,6 +41,11 @@ func (m *MockFileService) UploadFile(f types.File) error {
 func (m *MockFileService) SaveFile(file multipart.File, hashedFilename, subdirectory string) (string, error) {
 	args := m.Called(file, hashedFilename, subdirectory)
 	return args.String(0), args.Error(1)
+}
+
+func (m *MockFileService) GetFile(id string) (types.File, error) {
+	args := m.Called(id)
+	return args.Get(0).(types.File), args.Error(1)
 }
 
 type FakeMultiPart struct {
@@ -90,6 +96,11 @@ func TestUploadFileHandler(t *testing.T) {
 			name:           "FileTooLarge",
 			fileData:       make([]byte, 10*1024*1024+10), // 10 MB + 10 byte
 			expectedStatus: http.StatusRequestEntityTooLarge,
+		},
+		{
+			name:           "Success",
+			fileData:       []byte("test data"), // Less than 10MB
+			expectedStatus: http.StatusOK,
 		},
 		// Add more test cases here
 	}
@@ -149,6 +160,7 @@ func TestUploadFileHandler(t *testing.T) {
 			fh.UploadFileHandler(rr, req)
 
 			// Check the status code
+			fmt.Println(rr.Code)
 			if status := rr.Code; status != tc.expectedStatus {
 				t.Errorf("handler returned wrong status code: got %v want %v",
 					status, tc.expectedStatus)

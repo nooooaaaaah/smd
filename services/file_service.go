@@ -20,6 +20,7 @@ type FileService interface {
 	SaveAndUploadFile(file multipart.File, hashedFilename string, subdirectory string, f types.File) error
 	UploadFile(f types.File) error
 	SaveFile(file multipart.File, hashedFilename, subdirectory string) (string, error)
+	GetFile(id string) (types.File, error)
 }
 
 type fileService struct {
